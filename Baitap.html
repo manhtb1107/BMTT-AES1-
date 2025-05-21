@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mã hóa và Giải mã (AES)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #141428, #2e2e50);
+      color: #e0e0ff;
+      margin: 0;
+      padding: 30px 20px 40px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      align-items: flex-start;
+    }
+    #app-container {
+      max-width: 1024px;
+      width: 100%;
+      background: #23234a;
+      border-radius: 16px;
+      box-shadow:
+        0 8px 30px rgba(0, 0, 80, 0.6),
+        inset 0 0 60px rgba(0, 0, 80, 0.3);
+      padding: 30px 40px 40px;
+      display: flex;
+      gap: 40px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    h1 {
+      width: 100%;
+      font-weight: 600;
+      font-size: 2.8rem;
+      color: #7d9eff;
+      text-align: center;
+      text-shadow: 0 0 12px #4a6cffaa;
+      margin-bottom: 40px;
+      user-select: none;
+    }
+    section {
+      background: #1a1a33;
+      border-radius: 14px;
+      flex: 1 1 440px;
+      max-width: 460px;
+      padding: 30px 35px 35px;
+      box-shadow:
+        0 8px 24px rgba(30, 45, 90, 0.8),
+        inset 0 0 20px #4965ff88;
+      display: flex;
+      flex-direction: column;
+      color: #cbd4ff;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    section:hover {
+      transform: translateY(-8px);
+      box-shadow:
+        0 16px 40px rgba(30, 45, 140, 1),
+        inset 0 0 30px #7190ffbb;
+    }
+    h2 {
+      font-weight: 700;
+      font-size: 1.8rem;
+      color: #a2b7ff;
+      margin-bottom: 25px;
+      user-select: none;
+      letter-spacing: 0.04em;
+      text-align: center;
+      text-shadow: 0 0 6px #4a6cffaa;
+    }
+    label {
+      margin-top: 15px;
+      font-weight: 600;
+      font-size: 1rem;
+      user-select: none;
+      color: #9aacffcc;
+    }
+
+    /* Dropzone container - for drag & drop files */
+    .dropzone {
+      margin-top: 8px;
+      padding: 24px 15px;
+      border: 2px dashed #4970ffcc;
+      border-radius: 12px;
+      background: #2c2c58;
+      color: #acbfffcc;
+      text-align: center;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60px;
+      box-shadow: inset 0 0 12px #5466ff99;
+      position: relative;
+    }
+    .dropzone.hovered {
+      background-color: #36417fdd;
+      border-color: #7d9effcc;
+      color: #e0e4ff;
+      box-shadow: inset 0 0 18px #7d9effcc;
+    }
+    .dropzone input[type="file"] {
+      position: absolute;
+      opacity: 0;
+      height: 100%;
+      width: 100%;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      margin: 0;
+      z-index: 2;
+    }
+
+    input[type="password"],
+    input[type="text"] {
+      margin-top: 18px;
+      padding: 12px 15px;
+      font-size: 1.1rem;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      width: 100%;
+      background: #2c2c58;
+      color: #dde1ff;
+      box-shadow: inset 0 0 8px #5466ff99;
+      transition: background-color 0.25s ease, box-shadow 0.25s ease;
+      cursor: text;
+    }
+    input[type="password"]:hover,
+    input[type="text"]:hover,
+    input[type="password"]:focus,
+    input[type="text"]:focus {
+      background: #36417f;
+      box-shadow: inset 0 0 12px #7d9effcc;
+      color: #f0f2ff;
+    }
+    button {
+      margin-top: 28px;
+      background: linear-gradient(90deg, #4a6cff, #2d4fcc);
+      color: white;
+      padding: 14px 0;
+      font-size: 1.25rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      user-select: none;
+      box-shadow:
+        0 6px 15px #4970ffcc;
+      transition: background 0.35s ease, transform 0.2s ease, box-shadow 0.3s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      filter: drop-shadow(0 0 4px #5a78ff90);
+    }
+    button:hover {
+      background: linear-gradient(90deg, #2d4fcc, #4a6cff);
+      transform: scale(1.04);
+      box-shadow:
+        0 10px 25px #3354ffcc;
+    }
+    button:active {
+      transform: scale(0.97);
+      box-shadow:
+        0 3px 10px #223ea4cc;
+    }
+
+    /* Icons for button */
+    button svg {
+      width: 22px;
+      height: 22px;
+      fill: white;
+      filter: drop-shadow(0 0 2px #e0e6ffdd);
+    }
+
+    /* Status text */
+    #encrypt-status,
+    #decrypt-status {
+      margin-top: 18px;
+      font-style: italic;
+      min-height: 28px;
+      line-height: 1.3em;
+      color: #93a5ffcc;
+      white-space: pre-wrap;
+      user-select:none;
+    }
+
+    a.download-link {
+      margin-top: 18px;
+      display: inline-block;
+      color: #a2b7ffcc;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      user-select: none;
+      align-self: flex-start;
+      transition: color 0.3s ease;
+    }
+    a.download-link:hover {
+      color: #4a6cff;
+      text-shadow: 0 0 6px #4a6cffaa;
+    }
+
+    @media (max-width: 940px) {
+      #app-container {
+        flex-direction: column;
+        align-items: center;
+        padding: 20px 15px 30px;
+      }
+      section {
+        max-width: 100%;
+        width: 100%;
+      }
+      h1 {
+        font-size: 2.4rem;
+        margin-bottom: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app-container">
+    <h1>Mã hóa và Giải mã (AES)</h1>
+
+    <section id="encryption-section">
+      <h2>Mã hóa (Encrypt)</h2>
+      <label for="encrypt-file">Chọn file để mã hóa hoặc kéo thả vào khu vực bên dưới:</label>
+      <div class="dropzone" id="encrypt-dropzone" tabindex="0" aria-label="Kéo thả file để mã hóa hoặc nhấn để chọn file">
+        Kéo thả file vào đây hoặc nhấn để chọn file
+        <input type="file" id="encrypt-file" accept="*/*" aria-describedby="encrypt-status" />
+      </div>
+      <label for="encrypt-key">Nhập khóa bí mật (mật khẩu bất kỳ độ dài):</label>
+      <input type="password" id="encrypt-key" placeholder="Nhập mật khẩu..." autocomplete="off"/>
+      <button id="btn-encrypt" title="Mã hóa file">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 14v-4h3l-4-5-4 5h3v4z"/>
+        </svg>
+        Mã hóa file
+      </button>
+      <div id="encrypt-status" aria-live="polite" role="status"></div>
+      <a id="download-encrypt" class="download-link" hidden>📥 Tải file đã mã hóa</a>
+    </section>
+
+    <section id="decryption-section">
+      <h2>Giải mã (Decrypt)</h2>
+      <label for="decrypt-file">Chọn file để giải mã hoặc kéo thả vào khu vực bên dưới:</label>
+      <div class="dropzone" id="decrypt-dropzone" tabindex="0" aria-label="Kéo thả file để giải mã hoặc nhấn để chọn file">
+        Kéo thả file vào đây hoặc nhấn để chọn file
+        <input type="file" id="decrypt-file" accept="*/*" aria-describedby="decrypt-status" />
+      </div>
+      <label for="decrypt-key">Nhập khóa bí mật (mật khẩu bất kỳ độ dài):</label>
+      <input type="password" id="decrypt-key" placeholder="Nhập mật khẩu..." autocomplete="off" />
+      <button id="btn-decrypt" title="Giải mã file">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm0 14v-4H9l4-5 4 5h-3v4z"/>
+        </svg>
+        Giải mã file
+      </button>
+      <div id="decrypt-status" aria-live="polite" role="status"></div>
+      <a id="download-decrypt" class="download-link" hidden>📥 Tải file đã giải mã</a>
+    </section>
+  </div>
+
+  <script>
+    // Padding PKCS7
+    function pkcs7Pad(buffer) {
+      const blockSize = 16;
+      let padLength = blockSize - (buffer.byteLength % blockSize);
+      let padded = new Uint8Array(buffer.byteLength + padLength);
+      padded.set(new Uint8Array(buffer), 0);
+      padded.fill(padLength, buffer.byteLength);
+      return padded.buffer;
+    }
+
+    function pkcs7Unpad(buffer) {
+      let data = new Uint8Array(buffer);
+      let padLength = data[data.length - 1];
+      if (padLength < 1 || padLength > 16) throw new Error('Padding không hợp lệ');
+      for (let i = data.length - padLength; i < data.length; i++) {
+        if (data[i] !== padLength) throw new Error('Padding không hợp lệ');
+      }
+      return data.slice(0, data.length - padLength).buffer;
+    }
+
+    function generateRandomBytes(length) {
+      return window.crypto.getRandomValues(new Uint8Array(length));
+    }
+
+    async function getKeyMaterial(password) {
+      let enc = new TextEncoder();
+      return window.crypto.subtle.importKey(
+        "raw",
+        enc.encode(password),
+        {name: "PBKDF2"},
+        false,
+        ["deriveKey"]
+      );
+    }
+
+    async function deriveKey(keyMaterial, salt) {
+      return window.crypto.subtle.deriveKey(
+        {
+          "name": "PBKDF2",
+          salt: salt,
+          iterations: 100000,
+          hash: "SHA-256"
+        },
+        keyMaterial,
+        { "name": "AES-CBC", length: 256},
+        false,
+        ["encrypt", "decrypt"]
+      );
+    }
+
+    async function encryptAES(data, password) {
+      const salt = generateRandomBytes(16);
+      const iv = generateRandomBytes(16);
+      const keyMaterial = await getKeyMaterial(password);
+      const key = await deriveKey(keyMaterial, salt);
+      const encrypted = await window.crypto.subtle.encrypt(
+        {name: "AES-CBC", iv: iv},
+        key,
+        data
+      );
+      const result = new Uint8Array(salt.byteLength + iv.byteLength + encrypted.byteLength);
+      result.set(salt, 0);
+      result.set(iv, salt.byteLength);
+      result.set(new Uint8Array(encrypted), salt.byteLength + iv.byteLength);
+      return result.buffer;
+    }
+
+    async function decryptAES(data, password) {
+      if (data.byteLength < 32) throw new Error("File không hợp lệ hoặc quá ngắn.");
+      const dataArray = new Uint8Array(data);
+      const salt = dataArray.slice(0, 16);
+      const iv = dataArray.slice(16, 32);
+      const encrypted = dataArray.slice(32);
+
+      const keyMaterial = await getKeyMaterial(password);
+      const key = await deriveKey(keyMaterial, salt);
+
+      const decrypted = await window.crypto.subtle.decrypt(
+        {name: "AES-CBC", iv: iv},
+        key,
+        encrypted
+      );
+      return decrypted;
+    }
+
+    // Helper: set file input file programmatically from dropped files (only 1 file)
+    function setFileInputFiles(inputElem, files) {
+      if (!files || files.length === 0) return;
+      const dt = new DataTransfer();
+      dt.items.add(files[0]);
+      inputElem.files = dt.files;
+      inputElem.dispatchEvent(new Event('change'));
+    }
+
+    // Setup drag & drop support for a dropzone and its file input
+    function setupDropzone(dropzoneId, inputId) {
+      const dropzone = document.getElementById(dropzoneId);
+      const fileInput = document.getElementById(inputId);
+
+      dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('hovered');
+      });
+      dropzone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('hovered');
+      });
+      dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('hovered');
+        if (e.dataTransfer.files.length > 0) {
+          setFileInputFiles(fileInput, e.dataTransfer.files);
+        }
+      });
+      // Allow open file select dialog by pressing Enter or Space when dropzone focused
+      dropzone.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          fileInput.click();
+        }
+      });
+    }
+
+    setupDropzone('encrypt-dropzone', 'encrypt-file');
+    setupDropzone('decrypt-dropzone', 'decrypt-file');
+
+    // Update dropzone text to show selected file name or default text
+    function updateDropzoneText(dropzoneId, inputId) {
+      const dropzone = document.getElementById(dropzoneId);
+      const input = document.getElementById(inputId);
+      function update() {
+        if (input.files.length > 0) {
+          dropzone.textContent = `Đã chọn file: ${input.files[0].name}`;
+          dropzone.appendChild(input); // Keep file input hidden inside dropzone
+        } else {
+          dropzone.textContent = 'Kéo thả file vào đây hoặc nhấn để chọn file';
+          dropzone.appendChild(input);
+        }
+      }
+      input.addEventListener('change', update);
+      update();
+    }
+
+    updateDropzoneText('encrypt-dropzone', 'encrypt-file');
+    updateDropzoneText('decrypt-dropzone', 'decrypt-file');
+
+    document.getElementById('btn-encrypt').addEventListener('click', async () => {
+      const fileInput = document.getElementById('encrypt-file');
+      const passwordInput = document.getElementById('encrypt-key');
+      const status = document.getElementById('encrypt-status');
+      const downloadLink = document.getElementById('download-encrypt');
+      downloadLink.hidden = true;
+      status.textContent = '';
+
+      if (!fileInput.files.length) {
+        status.textContent = 'Vui lòng chọn file để mã hóa.';
+        return;
+      }
+      if (!passwordInput.value) {
+        status.textContent = 'Vui lòng nhập mật khẩu.';
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const password = passwordInput.value;
+
+      try {
+        status.textContent = 'Đang đọc file...';
+        const fileBuffer = await file.arrayBuffer();
+        const padded = pkcs7Pad(fileBuffer);
+        status.textContent = 'Đang mã hóa...';
+        const encrypted = await encryptAES(padded, password);
+
+        const blob = new Blob([encrypted]);
+        const url = URL.createObjectURL(blob);
+        downloadLink.href = url;
+        downloadLink.download = file.name + '.enc';
+        downloadLink.hidden = false;
+        status.textContent = 'Mã hóa thành công! Bạn có thể tải file đã mã hóa.';
+      }
+      catch (e) {
+        status.textContent = 'Lỗi khi mã hóa: ' + e.message;
+      }
+    });
+
+    document.getElementById('btn-decrypt').addEventListener('click', async () => {
+      const fileInput = document.getElementById('decrypt-file');
+      const passwordInput = document.getElementById('decrypt-key');
+      const status = document.getElementById('decrypt-status');
+      const downloadLink = document.getElementById('download-decrypt');
+      downloadLink.hidden = true;
+      status.textContent = '';
+
+      if (!fileInput.files.length) {
+        status.textContent = 'Vui lòng chọn file để giải mã.';
+        return;
+      }
+      if (!passwordInput.value) {
+        status.textContent = 'Vui lòng nhập mật khẩu.';
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const password = passwordInput.value;
+
+      try {
+        status.textContent = 'Đang đọc file...';
+        const fileBuffer = await file.arrayBuffer();
+        status.textContent = 'Đang giải mã...';
+        const decrypted = await decryptAES(fileBuffer, password);
+        const unpadded = pkcs7Unpad(decrypted);
+
+        const blob = new Blob([unpadded]);
+        const url = URL.createObjectURL(blob);
+
+        let originalName = file.name;
+        if (originalName.endsWith('.enc')) {
+          originalName = originalName.slice(0, -4);
+        } else {
+          originalName = 'decrypted_' + originalName;
+        }
+        downloadLink.href = url;
+        downloadLink.download = originalName;
+        downloadLink.hidden = false;
+        status.textContent = 'Giải mã thành công! Bạn có thể tải file đã giải mã.';
+      }
+      catch (e) {
+        status.textContent = 'Lỗi khi giải mã: ' + e.message + ' Vui lòng kiểm tra lại mật khẩu hoặc file.';
+      }
+    });
+  </script>
+</body>
+</html>
+
